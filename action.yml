@@ -1,0 +1,15 @@
+name: 'Apply label to approved pull request'
+description: 'Apply label to approved pull request'
+author: 'Richard Li'
+inputs:
+  requiredApprovals:
+    required: true
+    description: 'How many approvals are required at least?'
+    default: '2'
+  approvedLabel:
+    required: true
+    description: 'What label do you want to apply on approved pull requests'
+    default: 'approved'
+runs:
+  using: 'node12'
+  main: 'dist/index.js'
