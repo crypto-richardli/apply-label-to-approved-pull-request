@@ -1,6 +1,5 @@
 name: 'build-test'
-on:
-  pull_request_review:
+on: pull_request_review
 
 env:
   NODE_TLS_REJECT_UNAUTHORIZED: 0

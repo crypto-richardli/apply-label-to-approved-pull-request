@@ -89,16 +89,14 @@ exports.handleEvent = void 0;
 const core = __importStar(__webpack_require__(186));
 const github = __importStar(__webpack_require__(438));
 const handleEvent = () => __awaiter(void 0, void 0, void 0, function* () {
-    const accessToken = process.env.GITHUB_TOKEN;
-    if (!accessToken) {
-        throw new Error('GITHUB_TOKEN is undefined');
-    }
-    const { requiredApprovals, approvedLabel } = getInputs();
+    const { accessToken } = getEnvVariables();
     const octokit = github.getOctokit(accessToken);
     const metadata = getMetadata();
     const approvals = yield getApprovals(octokit, metadata);
+    const { requiredApprovals, approvedLabel } = getInputs();
     const enough = approvals >= requiredApprovals;
-    const includes = metadata.pullLabels.includes(approvedLabel);
+    const { pullLabels } = metadata;
+    const includes = pullLabels.includes(approvedLabel);
     if (enough && !includes) {
         yield applyLabel(octokit, metadata, approvedLabel);
         return;
@@ -108,6 +106,13 @@ const handleEvent = () => __awaiter(void 0, void 0, void 0, function* () {
     }
 });
 exports.handleEvent = handleEvent;
+const getEnvVariables = () => {
+    const accessToken = process.env.GITHUB_TOKEN;
+    if (!accessToken) {
+        throw new Error('GITHUB_TOKEN is undefined');
+    }
+    return { accessToken };
+};
 const getInputs = () => {
     const requiredApprovals = core.getInput('requiredApprovals');
     const approvedLabel = core.getInput('approvedLabel');
@@ -121,11 +126,12 @@ const getMetadata = () => {
     if (!repository || !pullRequest) {
         throw new Error('Invalid payload');
     }
+    const pullLabels = pullRequest.labels.map((label) => label.name);
     return {
         repo: repository.name,
         owner: repository.owner.login,
         pullNumber: pullRequest.number,
-        pullLabels: pullRequest.labels
+        pullLabels
     };
 };
 const getApprovals = (octokit, { owner, repo, pullNumber }) => __awaiter(void 0, void 0, void 0, function* () {
@@ -144,7 +150,8 @@ const getApprovals = (octokit, { owner, repo, pullNumber }) => __awaiter(void 0,
         }
     }
     const states = Object.values(results);
-    return states.filter(state => state === 'APPROVED').length;
+    const approvals = states.filter(state => state === 'APPROVED');
+    return approvals.length;
 });
 const applyLabel = (octokit, { owner, repo, pullNumber }, approvedLabel) => __awaiter(void 0, void 0, void 0, function* () {
     yield octokit.issues.addLabels({

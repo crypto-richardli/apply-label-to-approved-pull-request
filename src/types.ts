@@ -1,3 +1,9 @@
+import {GitHub} from '@actions/github/lib/utils'
+
+export type EnvVariables = {
+  accessToken: string
+}
+
 export type Metadata = {
   repo: string
   owner: string
@@ -13,3 +19,9 @@ export type Inputs = {
 export type Results = {
   [user: string]: string
 }
+
+export type Label = {
+  name: string
+}
+
+export type Octokit = InstanceType<typeof GitHub>

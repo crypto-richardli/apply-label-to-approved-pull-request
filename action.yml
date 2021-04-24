@@ -4,7 +4,7 @@ author: 'Richard Li'
 inputs:
   requiredApprovals:
     required: true
-    description: 'How many approvals are required at least?'
+    description: 'How many approvals are required at least'
     default: '2'
   approvedLabel:
     required: true

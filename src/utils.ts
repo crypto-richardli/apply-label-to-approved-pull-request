@@ -1,22 +1,17 @@
 import * as core from '@actions/core'
 import * as github from '@actions/github'
-import {GitHub} from '@actions/github/lib/utils'
-import {Inputs, Metadata, Results} from './types'
+import {EnvVariables, Inputs, Label, Metadata, Octokit, Results} from './types'
 
 export const handleEvent = async (): Promise<void> => {
-  const accessToken = process.env.GITHUB_TOKEN
-  if (!accessToken) {
-    throw new Error('GITHUB_TOKEN is undefined')
-  }
-
-  const {requiredApprovals, approvedLabel} = getInputs()
-
+  const {accessToken} = getEnvVariables()
   const octokit = github.getOctokit(accessToken)
   const metadata = getMetadata()
   const approvals = await getApprovals(octokit, metadata)
 
+  const {requiredApprovals, approvedLabel} = getInputs()
   const enough = approvals >= requiredApprovals
-  const includes = metadata.pullLabels.includes(approvedLabel)
+  const {pullLabels} = metadata
+  const includes = pullLabels.includes(approvedLabel)
 
   if (enough && !includes) {
     await applyLabel(octokit, metadata, approvedLabel)
@@ -26,6 +21,15 @@ export const handleEvent = async (): Promise<void> => {
   if (!enough && includes) {
     await removeLabel(octokit, metadata, approvedLabel)
   }
+}
+
+const getEnvVariables = (): EnvVariables => {
+  const accessToken = process.env.GITHUB_TOKEN
+  if (!accessToken) {
+    throw new Error('GITHUB_TOKEN is undefined')
+  }
+
+  return {accessToken}
 }
 
 const getInputs = (): Inputs => {
@@ -45,16 +49,18 @@ const getMetadata = (): Metadata => {
     throw new Error('Invalid payload')
   }
 
+  const pullLabels = pullRequest.labels.map((label: Label) => label.name)
+
   return {
     repo: repository.name,
     owner: repository.owner.login,
     pullNumber: pullRequest.number,
-    pullLabels: pullRequest.labels
+    pullLabels
   }
 }
 
 const getApprovals = async (
-  octokit: InstanceType<typeof GitHub>,
+  octokit: Octokit,
   {owner, repo, pullNumber}: Metadata
 ): Promise<number> => {
   const {data: reviews} = await octokit.pulls.listReviews({
@@ -75,11 +81,12 @@ const getApprovals = async (
   }
 
   const states = Object.values(results)
-  return states.filter(state => state === 'APPROVED').length
+  const approvals = states.filter(state => state === 'APPROVED')
+  return approvals.length
 }
 
 const applyLabel = async (
-  octokit: InstanceType<typeof GitHub>,
+  octokit: Octokit,
   {owner, repo, pullNumber}: Metadata,
   approvedLabel: string
 ): Promise<void> => {
@@ -92,7 +99,7 @@ const applyLabel = async (
 }
 
 const removeLabel = async (
-  octokit: InstanceType<typeof GitHub>,
+  octokit: Octokit,
   {owner, repo, pullNumber}: Metadata,
   approvedLabel: string
 ): Promise<void> => {
