@@ -75,7 +75,7 @@ const getApprovals = async (
     const reviewer = review.user?.login
     const state = review.state
 
-    if (reviewer) {
+    if (reviewer && state !== 'COMMENTED') {
       results[reviewer] = state
     }
   }

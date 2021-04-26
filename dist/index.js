@@ -145,7 +145,7 @@ const getApprovals = (octokit, { owner, repo, pullNumber }) => __awaiter(void 0,
     for (const review of reviews) {
         const reviewer = (_a = review.user) === null || _a === void 0 ? void 0 : _a.login;
         const state = review.state;
-        if (reviewer) {
+        if (reviewer && state !== 'COMMENTED') {
             results[reviewer] = state;
         }
     }
